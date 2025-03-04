@@ -28,11 +28,8 @@ const MessageScreen = ({ route, navigation }) => {
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const { incrementReward } = useContext(RewardContext);
   const client = useRef(null);
-  const isConnected = useRef(false); // Track connection status
-
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
-
   const flatListRef = useRef(null);
 
   // Generate unique IDs
@@ -40,13 +37,11 @@ const MessageScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     console.log('Initializing WebSocket connection...');
-    const socket = new SockJS('http://192.168.65.102:8080/ws');
+    const socket = new SockJS('http://192.168.144.102:8080/ws');
     client.current = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
         console.log('Connected to WebSocket');
-        isConnected.current = true; // Set connection status to true
-        console.log('isConnected.current:', isConnected.current); // Debugging log
         client.current.subscribe(`/user/${chatData.sender}/private`, (message) => {
           try {
             const receivedMessage = JSON.parse(message.body);
@@ -77,7 +72,6 @@ const MessageScreen = ({ route, navigation }) => {
       onWebSocketError: (event) => {
         console.error('WebSocket error: ', event);
         isConnected.current = false; // Set connection status to false
-        console.log('isConnected.current:', isConnected.current); // Debugging log
       }
     });
 
@@ -91,11 +85,7 @@ const MessageScreen = ({ route, navigation }) => {
   }, [chatData]);
 
   const handleSend = () => {
-    console.log('Text:', text);
-    console.log('Recipient:', chatData.recipient);
-    console.log('Is Connected:', isConnected.current);
-
-    if (text && chatData.recipient && isConnected.current) {
+    if (text && chatData.recipient) {
       const newMessage = {
         id: generateUniqueId(),
         sender: chatData.sender, // Ensure sender is set correctly

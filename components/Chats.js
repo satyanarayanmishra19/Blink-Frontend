@@ -39,7 +39,7 @@ const Chats = ({ navigation, route }) => {
     try {
       console.log(`Fetching connections for username: ${username} with search query: ${search}`);
       const token = await AsyncStorage.getItem('token'); // Retrieve token from AsyncStorage
-      const response = await fetch(`http://192.168.65.102:8080/api/chats/${username}?search=${search}`, {
+      const response = await fetch(`http://192.168.144.102:8080/api/chats/${username}?search=${search}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -86,9 +86,8 @@ const Chats = ({ navigation, route }) => {
     setConnections(sortConnectionsByTime(sampleConnections));
   }, []);
 
-  const filteredConnections = connections.filter(connection =>
-    connection.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConnections = connections.filter(connection => connection.id !== username)
+  .filter(connection => connection.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const archiveChat = (itemId) => {
     const newConnections = connections.filter(connection => connection.id !== itemId);
@@ -114,7 +113,7 @@ const Chats = ({ navigation, route }) => {
         name: item.name, // Pass the recipient's name
         profileImage: item.profileImage, // Pass the profile image if needed
         sender: username, // Pass current user's username as sender
-        recipient: item.username, // Pass the recipient based on the selected chat
+        recipient: item.username,
       },
     });
   };
@@ -207,11 +206,9 @@ const Chats = ({ navigation, route }) => {
         {archivedConnections.length > 0 && renderArchivedSection()}
 
         <FlatList
-          data={searchQuery ? filteredConnections : connections}
+          data={filteredConnections}
           renderItem={renderChatItem}
-          keyExtractor={item => item.id}
-          style={styles.chatContainer}
-          showsVerticalScrollIndicator={false}
+          keyExtractor={item => item.id.toString()} // Ensure keys are unique
         />
       </View>
       {/* <BottomNavigationBar navigation={navigation} /> */}
