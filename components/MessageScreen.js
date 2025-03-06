@@ -9,15 +9,57 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import FileViewer from 'react-native-file-viewer';
 import { RewardContext } from './RewardContext';
-import SockJS from 'sockjs-client'; // Ensure this import is correct
-import { Client } from '@stomp/stompjs';
+import { connect, sendMessage, subscribeToPublicTopic, addUser } from './Stomp';
 import styles from './MessageScreen.styles';
-const { width } = Dimensions.get('window');
+
+const { width, height } = Dimensions.get('window');
 
 // Dummy Data for conversation
 const messagesData = [
-  { id: '1', text: 'Hello, how are you?', time: '8:24 AM', type: 'received' },
-  { id: '2', text: 'I am good man... You?', time: '8:24 AM', type: 'sent' },
+  {
+    id: '1',
+    text: 'Hello, how are you?',
+    time: '8:24 AM',
+    type: 'received',
+  },
+  {
+    id: '2',
+    text: 'I am good man... You?',
+    time: '8:24 AM',
+    type: 'sent',
+  },
+  {
+    id: '3',
+    text: 'I\'m doing well, thank you for asking! How can I help you today?',
+    time: '8:24 AM',
+    type: 'received',
+  },
+  {
+    id: '4',
+    text: 'Can you send me 12,000 rupees now, I need to purchase a shoe',
+    time: '8:24 AM',
+    type: 'sent',
+  },
+  {
+    id: '5',
+    text: 'Cool I\'m sending now 😎',
+    time: '8:25 AM',
+    type: 'received',
+  },
+  {
+    id: '6',
+    text: 'Nice fit dude... 😎',
+    time: '8:26 AM',
+    type: 'received',
+    image: 'https://images.pexels.com/photos/1387022/pexels-photo-1387022.jpeg?cs=srgb&dl=book-aesthetic-books-old-books-open-books-1387022.jpg&fm=jpg',
+  },
+  {
+    id: '7',
+    // text: 'Nice fit dude... 😎',
+    time: '8:26 AM',
+    type: 'sent',
+    image: require('../assets/images/Avatar4.jpg'),
+  },
 ];
 
 const MessageScreen = ({ route, navigation }) => {
@@ -25,82 +67,86 @@ const MessageScreen = ({ route, navigation }) => {
   const [messages, setMessages] = useState(messagesData);
   const [text, setText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [starredMessages, setStarredMessages] = useState({});
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const { incrementReward } = useContext(RewardContext);
-  const client = useRef(null);
+  const isConnected = useRef(false);
+
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
+
   const flatListRef = useRef(null);
 
-  // Generate unique IDs
   const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   useEffect(() => {
-    console.log('Initializing WebSocket connection...');
-    const socket = new SockJS('http://192.168.144.102:8080/ws');
-    client.current = new Client({
-      webSocketFactory: () => socket,
-      onConnect: () => {
-        console.log('Connected to WebSocket');
-        client.current.subscribe(`/user/${chatData.sender}/private`, (message) => {
-          try {
-            const receivedMessage = JSON.parse(message.body);
-            receivedMessage.type = 'received';
-            receivedMessage.sender = chatData.recipient; // Correct sender property
+    if (!chatData.sender || !chatData.recipient) {
+      console.warn("Chat data is incomplete, skipping WebSocket connection.");
+      return;
+    }
 
-            setMessages(prevMessages => {
-              const updatedMessages = [...prevMessages, receivedMessage];
-              const uniqueMessages = Array.from(new Set(updatedMessages.map(m => m.id)))
-                .map(id => updatedMessages.find(m => m.id === id));
+    const onConnected = () => {
+      console.log("✅ STOMP Connected!");
+      isConnected.current = true;
+      console.log('isConnected.current:', isConnected.current);
 
-              return uniqueMessages;
-            });
-          } catch (error) {
-            console.error("Error parsing private message:", error);
-          }
-        });
-      },
-      onStompError: (frame) => {
-        console.error('Broker reported error: ' + frame.headers['message']);
-        console.error('Additional details: ' + frame.body);
-      },
-      onWebSocketClose: (event) => {
-        console.error('WebSocket closed: ', event);
-        isConnected.current = false; // Set connection status to false
-        console.log('isConnected.current:', isConnected.current); // Debugging log
-      },
-      onWebSocketError: (event) => {
-        console.error('WebSocket error: ', event);
-        isConnected.current = false; // Set connection status to false
-      }
-    });
+      subscribeToPublicTopic((message) => {
+        try {
+          const receivedMessage = JSON.parse(message.body);
+          receivedMessage.type = "received";
+          receivedMessage.sender = chatData.recipient; // Ensuring correct sender
 
-    client.current.activate();
+          setMessages((prevMessages) => {
+            const updatedMessages = [...prevMessages, receivedMessage];
+
+            // Remove duplicates based on `id`
+            const uniqueMessages = Array.from(
+              new Map(updatedMessages.map((msg) => [msg.id, msg])).values()
+            );
+
+            return uniqueMessages;
+          });
+        } catch (error) {
+          console.error("Error parsing private message:", error);
+        }
+      });
+
+      addUser(chatData.sender);
+    };
+
+    const onError = (error) => {
+      console.error("WebSocket error: ", error);
+      isConnected.current = false;
+      console.log('isConnected.current:', isConnected.current);
+    };
+
+    connect(chatData.sender, onConnected, onError);
 
     return () => {
-      if (client.current) {
-        client.current.deactivate();
+      if (isConnected.current) {
+        isConnected.current = false;
       }
     };
-  }, [chatData]);
+  }, [chatData.sender, chatData.recipient, setMessages]);
 
   const handleSend = () => {
-    if (text && chatData.recipient) {
+    console.log('Text:', text);
+    console.log('Recipient:', chatData.recipient);
+    console.log('Is Connected:', isConnected.current);
+
+    if (text && chatData.recipient && isConnected.current) {
       const newMessage = {
         id: generateUniqueId(),
         sender: chatData.sender, // Ensure sender is set correctly
         recipient: chatData.recipient, // Ensure recipient is set correctly
         text: text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Fix syntax error
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'sent',
       };
 
       console.log("Sending message:", newMessage);
-      
-      client.current.publish({
-        destination: '/app/private-message',
-        body: JSON.stringify(newMessage),
-      });
+
+      sendMessage(text, chatData.sender);
 
       setMessages(prevMessages => [...prevMessages, newMessage]);
       setText('');
@@ -111,9 +157,11 @@ const MessageScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      setTimeout(() => {
+        flatListRef.current.scrollToEnd({ animated: true });
+      }, 10); // Small delay to ensure FlatList is rendered
     }
-  }, [messages]);
+  }, []);
 
   const openAttachmentModal = () => setAttachmentModalVisible(true);
   const closeAttachmentModal = () => setAttachmentModalVisible(false);
@@ -184,7 +232,6 @@ const MessageScreen = ({ route, navigation }) => {
     closeAttachmentModal();
   };
 
-
   const handleLongPress = (messageId) => {
     setStarredMessages((prevStarredMessages) => ({
       ...prevStarredMessages,
@@ -194,10 +241,7 @@ const MessageScreen = ({ route, navigation }) => {
 
   const renderMessage = ({ item }) => {
     const isSent = item.type === 'sent';
-    <View style={[styles.messageContainer, isSent ? styles.sentMessage : styles.receivedMessage]}>
-      {item.text && <Text style={styles.messageText}>{item.text}</Text>}
-      <Text style={styles.timeText}>{item.time}</Text>
-    </View>
+    const isStarred = starredMessages[item.id];
 
     const handleOpenDocument = (uri) => {
       FileViewer.open(uri)
@@ -253,9 +297,6 @@ const MessageScreen = ({ route, navigation }) => {
           >
             {item.time}
           </Text>
-          {/* {isStarred && (
-            // <Ionicons name="star" size={width * 0.04} color="#FFD700" style={styles.starIcon} />
-          )} */}
           {isSent && (
             <View style={styles.timeImageContainer}>
               <Image
@@ -300,8 +341,9 @@ const MessageScreen = ({ route, navigation }) => {
         ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesList}
+        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
       />
 
       <View style={styles.footer}>
@@ -318,9 +360,6 @@ const MessageScreen = ({ route, navigation }) => {
             onSubmitEditing={handleSend}
           />
           <View style={styles.iconRow}>
-            {/* <TouchableOpacity>
-              <Icon name="camera-outline" size={width * 0.06} color="#9e9e9e" />
-            </TouchableOpacity> */}
             <TouchableOpacity onPress={openAttachmentModal}>
               <Icon name="link" size={width * 0.06} color="#9e9e9e" />
             </TouchableOpacity>
@@ -335,7 +374,6 @@ const MessageScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Attachment Modal */}
       <Modal
         visible={attachmentModalVisible}
         transparent={true}
@@ -363,11 +401,10 @@ const MessageScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
 };
-
 
 export default MessageScreen;
