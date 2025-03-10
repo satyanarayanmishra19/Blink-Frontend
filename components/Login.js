@@ -17,7 +17,7 @@ const Login = ({ navigation, route }) => {
     setErrorMessage('');
   
     try {
-      const response = await fetch('http://192.168.144.102:8080/api/auth/login', {
+      const response = await fetch('http://192.168.86.102:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ const Login = ({ navigation, route }) => {
         await AsyncStorage.setItem('token', token);
         
         // Fetch user details
-        const userDetailsResponse = await fetch(`http://192.168.144.102:8080/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
+        const userDetailsResponse = await fetch(`http://192.168.86.102:8080/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

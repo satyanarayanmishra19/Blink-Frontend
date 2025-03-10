@@ -49,7 +49,7 @@ const VoiceCallScreen = ({ route }) => {
 
     // Initialize WebSocket connection
     const initWebSocket = () => {
-        const socket = new SockJS('http://192.168.1.226:8080/ws');
+        const socket = new SockJS('http://192.168.1.33:8080/ws');
         stompClient.current = Stomp.over(() => socket);
 
         stompClient.current.connect({}, () => {

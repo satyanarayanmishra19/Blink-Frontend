@@ -1,16 +1,18 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, StatusBar, SafeAreaView, Dimensions, Platform, Modal, TouchableWithoutFeedback } from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, StatusBar, SafeAreaView, Dimensions, Platform, Modal, TouchableWithoutFeedback, } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ChatModal from './ChatModal';
+import styles from './MessageScreen.styles';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import FileViewer from 'react-native-file-viewer';
 import { RewardContext } from './RewardContext';
-import { connect, sendMessage, subscribeToPublicTopic, addUser } from './Stomp';
-import styles from './MessageScreen.styles';
+
+// import * as ImagePicker from 'expo-image-picker';
+// import * as DocumentPicker from 'expo-document-picker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -70,88 +72,23 @@ const MessageScreen = ({ route, navigation }) => {
   const [starredMessages, setStarredMessages] = useState({});
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const { incrementReward } = useContext(RewardContext);
-  const isConnected = useRef(false);
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
 
   const flatListRef = useRef(null);
 
-  const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  useEffect(() => {
-    if (!chatData.sender || !chatData.recipient) {
-      console.warn("Chat data is incomplete, skipping WebSocket connection.");
-      return;
-    }
-
-    const onConnected = () => {
-      console.log("✅ STOMP Connected!");
-      isConnected.current = true;
-      console.log('isConnected.current:', isConnected.current);
-
-      subscribeToPublicTopic((message) => {
-        try {
-          const receivedMessage = JSON.parse(message.body);
-          receivedMessage.type = "received";
-          receivedMessage.sender = chatData.recipient; // Ensuring correct sender
-
-          setMessages((prevMessages) => {
-            const updatedMessages = [...prevMessages, receivedMessage];
-
-            // Remove duplicates based on `id`
-            const uniqueMessages = Array.from(
-              new Map(updatedMessages.map((msg) => [msg.id, msg])).values()
-            );
-
-            return uniqueMessages;
-          });
-        } catch (error) {
-          console.error("Error parsing private message:", error);
-        }
-      });
-
-      addUser(chatData.sender);
-    };
-
-    const onError = (error) => {
-      console.error("WebSocket error: ", error);
-      isConnected.current = false;
-      console.log('isConnected.current:', isConnected.current);
-    };
-
-    connect(chatData.sender, onConnected, onError);
-
-    return () => {
-      if (isConnected.current) {
-        isConnected.current = false;
-      }
-    };
-  }, [chatData.sender, chatData.recipient, setMessages]);
-
   const handleSend = () => {
-    console.log('Text:', text);
-    console.log('Recipient:', chatData.recipient);
-    console.log('Is Connected:', isConnected.current);
-
-    if (text && chatData.recipient && isConnected.current) {
+    if (text) {
       const newMessage = {
-        id: generateUniqueId(),
-        sender: chatData.sender, // Ensure sender is set correctly
-        recipient: chatData.recipient, // Ensure recipient is set correctly
-        text: text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        id: messages.length + 1,
+        text,
+        time: '8:30 AM',
         type: 'sent',
       };
-
-      console.log("Sending message:", newMessage);
-
-      sendMessage(text, chatData.sender);
-
-      setMessages(prevMessages => [...prevMessages, newMessage]);
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
       setText('');
-    } else {
-      console.error('Cannot send message: Username, text is missing, or not connected');
+      incrementReward(1);
     }
   };
 
@@ -171,7 +108,7 @@ const MessageScreen = ({ route, navigation }) => {
       mediaType: 'photo', // Can be 'photo', 'video', or 'mixed'
       quality: 1,
     };
-
+  
     launchImageLibrary(options, (response) => {
       if (response.didCancel) {
         console.log('User canceled image picker');
@@ -179,7 +116,7 @@ const MessageScreen = ({ route, navigation }) => {
         console.log('ImagePicker Error: ', response.errorMessage);
       } else {
         const uri = response.assets[0].uri;
-
+  
         // Add image to the messages list
         const newMessage = {
           id: Date.now().toString(),
@@ -187,11 +124,11 @@ const MessageScreen = ({ route, navigation }) => {
           type: 'sent',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
-
+  
         setMessages((prevMessages) => [...prevMessages, newMessage]);
       }
     });
-    closeAttachmentModal();
+    closeAttachmentModal ();
   };
 
   const takePhoto = async () => {
@@ -211,7 +148,7 @@ const MessageScreen = ({ route, navigation }) => {
       const res = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
       });
-
+  
       // Add the picked document to the message list (e.g., 'messages' state)
       const newMessage = {
         id: Math.random().toString(),  // Unique ID for the message
@@ -220,7 +157,7 @@ const MessageScreen = ({ route, navigation }) => {
         fileName: res.name,  // File name
         time: new Date().toLocaleTimeString(),
       };
-
+  
       setMessages(prevMessages => [...prevMessages, newMessage]);  // Assuming you use state for messages
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {
@@ -231,6 +168,7 @@ const MessageScreen = ({ route, navigation }) => {
     }
     closeAttachmentModal();
   };
+  
 
   const handleLongPress = (messageId) => {
     setStarredMessages((prevStarredMessages) => ({
@@ -242,7 +180,7 @@ const MessageScreen = ({ route, navigation }) => {
   const renderMessage = ({ item }) => {
     const isSent = item.type === 'sent';
     const isStarred = starredMessages[item.id];
-
+  
     const handleOpenDocument = (uri) => {
       FileViewer.open(uri)
         .then(() => {
@@ -252,7 +190,7 @@ const MessageScreen = ({ route, navigation }) => {
           console.log('Error opening document: ', error);
         });
     };
-
+  
     return (
       <TouchableOpacity
         onLongPress={() => handleLongPress(item.id)}
@@ -297,6 +235,9 @@ const MessageScreen = ({ route, navigation }) => {
           >
             {item.time}
           </Text>
+          {/* {isStarred && (
+            // <Ionicons name="star" size={width * 0.04} color="#FFD700" style={styles.starIcon} />
+          )} */}
           {isSent && (
             <View style={styles.timeImageContainer}>
               <Image
@@ -309,6 +250,9 @@ const MessageScreen = ({ route, navigation }) => {
       </TouchableOpacity>
     );
   };
+  
+  
+  
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -344,6 +288,7 @@ const MessageScreen = ({ route, navigation }) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesList}
         onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
+        
       />
 
       <View style={styles.footer}>
@@ -360,6 +305,9 @@ const MessageScreen = ({ route, navigation }) => {
             onSubmitEditing={handleSend}
           />
           <View style={styles.iconRow}>
+            {/* <TouchableOpacity>
+              <Icon name="camera-outline" size={width * 0.06} color="#9e9e9e" />
+            </TouchableOpacity> */}
             <TouchableOpacity onPress={openAttachmentModal}>
               <Icon name="link" size={width * 0.06} color="#9e9e9e" />
             </TouchableOpacity>
@@ -374,37 +322,39 @@ const MessageScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Attachment Modal */}
       <Modal
-        visible={attachmentModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={closeAttachmentModal}
-      >
-        <TouchableWithoutFeedback onPress={closeAttachmentModal}>
-          <View style={styles.attachmentModalContainer}>
-            <View style={styles.attachmentOptions}>
-              <TouchableOpacity style={styles.attachmentButton} onPress={pickImageFromGallery}>
-                <Icon name="image" size={width * 0.08} color="#3498db" />
-                <Text>Gallery</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.attachmentButton} onPress={takePhoto}>
-                <Icon name="camera" size={width * 0.08} color="#3498db" />
-                <Text>Camera</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.attachmentButton} onPress={pickDocument}>
-                <Icon name="file-document-outline" size={width * 0.08} color="#3498db" />
-                <Text>Document</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.attachmentButton}>
-                <MaterialCommunityIcons name="map-marker" size={width * 0.08} color="#3498db" />
-                <Text>Location</Text>
-              </TouchableOpacity>
-            </View>
+      visible={attachmentModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={closeAttachmentModal}
+    >
+      <TouchableWithoutFeedback onPress={closeAttachmentModal}>
+        <View style={styles.attachmentModalContainer}>
+          <View style={styles.attachmentOptions}>
+            <TouchableOpacity style={styles.attachmentButton} onPress={pickImageFromGallery}>
+              <Icon name="image" size={width * 0.08} color="#3498db" />
+              <Text>Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.attachmentButton} onPress={takePhoto}>
+              <Icon name="camera" size={width * 0.08} color="#3498db" />
+              <Text>Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.attachmentButton} onPress={pickDocument}>
+              <Icon name="file-document-outline" size={width * 0.08} color="#3498db" />
+              <Text>Document</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.attachmentButton}>
+              <MaterialCommunityIcons name="map-marker" size={width * 0.08} color="#3498db" />
+              <Text>Location</Text>
+            </TouchableOpacity>
           </View>
+        </View>
       </TouchableWithoutFeedback>
-      </Modal>
+    </Modal>
     </SafeAreaView>
   );
 };
+
 
 export default MessageScreen;
