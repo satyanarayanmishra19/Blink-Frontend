@@ -17,7 +17,7 @@ const Login = ({ navigation, route }) => {
     setErrorMessage('');
   
     try {
-      const response = await fetch('http://192.168.86.102:8080/api/auth/login', {
+      const response = await fetch('http://192.168.1.36:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,9 +30,8 @@ const Login = ({ navigation, route }) => {
         const token = data.token;
         // Save token to AsyncStorage for authentication persistence
         await AsyncStorage.setItem('token', token);
-        
         // Fetch user details
-        const userDetailsResponse = await fetch(`http://192.168.86.102:8080/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
+        const userDetailsResponse = await fetch(`http://192.168.1.36:8080/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -54,8 +53,7 @@ const Login = ({ navigation, route }) => {
           email: userDetails.email,
           phone: userDetails.phone,
           id: userDetails.username,
-          countryCode: '+91',
-          preference: '',
+          countryCode: '+91'
         });
 
         navigation.replace('BottomTabs'); // Navigate to the next screen

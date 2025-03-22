@@ -37,9 +37,9 @@ const Chats = ({ navigation, route }) => {
   const fetchConnections = async (search = '') => {
     setLoading(true); // Set loading to true before fetching
     try {
-      console.log(`Fetching connections for username: ${username} with search query: ${search}`);
-      const token = await AsyncStorage.getItem('token'); // Retrieve token from AsyncStorage
-      const response = await fetch(`http://192.168.86.102:8080/api/chats/${username}?search=${search}`, {
+      const token = await AsyncStorage.getItem('token');
+      const preferences = userData.preferences;
+      const response = await fetch(`http://192.168.1.36:8080/api/chats/${username}?search=${search}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -113,7 +113,7 @@ const Chats = ({ navigation, route }) => {
         name: item.name, // Pass the recipient's name
         profileImage: item.profileImage, // Pass the profile image if needed
         sender: username, // Pass current user's username as sender
-        recipient: item.username,
+        recipient: item.username
       },
     });
   };

@@ -135,7 +135,7 @@ const SignUp = ({ navigation, route }) => {
     if (validateInputsAndPasswords()) {
       try {
         // Send signup request
-        const response = await fetch('http://192.168.86.102:8080/api/users/signup', {
+        const response = await fetch('http://192.168.1.36:8080/api/users/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, name, email, phone, password: password }),

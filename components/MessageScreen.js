@@ -10,6 +10,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import FileViewer from 'react-native-file-viewer';
 import { RewardContext } from './RewardContext';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 // import * as ImagePicker from 'expo-image-picker';
 // import * as DocumentPicker from 'expo-document-picker';
@@ -66,31 +67,76 @@ const messagesData = [
 
 const MessageScreen = ({ route, navigation }) => {
   const { chatData } = route.params;
-  const [messages, setMessages] = useState(messagesData);
+  const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [starredMessages, setStarredMessages] = useState({});
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const { incrementReward } = useContext(RewardContext);
 
+  const senderId = chatData.sender; // Use chatData.sender for senderId
+  const receiverId = chatData.recipient; // Use chatData.recipitent for receiverId
+
+  const fetchChatMessages = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token'); // Retrieve token
+      const response = await fetch(`http://192.168.1.36:8080/api/messages/chat/${senderId}/${receiverId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add token to headers
+        },
+      });
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      console.error('Error fetching chat messages:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (text) {
+      const newMessage = {
+        senderId,
+        receiverId,
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      try {
+        const token = await AsyncStorage.getItem('token'); // Retrieve token
+        await fetch('http://192.168.1.36:8080/api/messages/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Add token to headers
+          },
+          body: JSON.stringify(newMessage),
+        });
+
+        setMessages((prevMessages) => [...prevMessages, newMessage]); // Update local state
+        setText(''); // Clear input
+        incrementReward(1);
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchChatMessages(); // Fetch conversation messages when the component mounts
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchChatMessages(); // Poll for new messages every few seconds
+    }, 5000);
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, []);
+
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
 
   const flatListRef = useRef(null);
-
-  const handleSend = () => {
-    if (text) {
-      const newMessage = {
-        id: messages.length + 1,
-        text,
-        time: '8:30 AM',
-        type: 'sent',
-      };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setText('');
-      incrementReward(1);
-    }
-  };
 
   useEffect(() => {
     if (flatListRef.current) {
@@ -285,7 +331,7 @@ const MessageScreen = ({ route, navigation }) => {
         ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id || index.toString()} // Ensure a unique key
         contentContainerStyle={styles.messagesList}
         onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
         
