@@ -59,7 +59,7 @@ const Preferences = ({ navigation, route }) => {
         if (response.ok) {
           console.log('Preferences saved successfully!', result);
           updateUserData({ preferences: selectedPreferences, username });
-          navigation.navigate('BottomTabs', { username });
+          navigation.navigate( 'Login' );
         } else {
           console.error('Failed to save preferences:', result);
         }

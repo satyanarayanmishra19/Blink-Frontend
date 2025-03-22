@@ -51,9 +51,51 @@ const styles = StyleSheet.create({
       padding: width * 0.03,
     },
     messageContainer: {
-      maxWidth: '80%',
-      marginVertical: height * 0.005,
-      padding: width * 0.03,
+      marginVertical: 5,
+      maxWidth: '70%',
+      borderRadius: 10,
+      padding: 10,
+    },
+    sentMessageContainer: {
+      alignSelf: 'flex-end', // Align to the right
+      backgroundColor: '#DCF8C6', // Light green for sender
+      borderRadius: 10,
+      padding: 10,
+      marginVertical: 5,
+    },
+    receivedMessageContainer: {
+      alignSelf: 'flex-start', // Align to the left
+      backgroundColor: '#FFFFFF', // White for receiver
+      borderRadius: 10,
+      padding: 10,
+      marginVertical: 5,
+    },
+    messageText: {
+      fontSize: 16,
+    },
+    sentMessageText: {
+      color: '#000000', // Black text for sender
+    },
+    receivedMessageText: {
+      color: '#333333', // Dark gray text for receiver
+    },
+    messageTime: {
+      fontSize: 12,
+      color: '#888888',
+      marginTop: 5,
+      alignSelf: 'flex-end',
+    },
+    sentMessageTime: {
+      alignSelf: 'flex-end', // Align time to the right for sender
+      fontSize: 12,
+      color: '#888888',
+      marginTop: 5,
+    },
+    receivedMessageTime: {
+      alignSelf: 'flex-start', // Align time to the left for receiver
+      fontSize: 12,
+      color: '#888888',
+      marginTop: 5,
     },
     sentMessage: {
       alignSelf: 'flex-end',
@@ -64,9 +106,6 @@ const styles = StyleSheet.create({
       alignSelf: 'flex-start',
       backgroundColor: 'grey',
       borderRadius: width * 0.03,
-    },
-    messageText: {
-      fontSize: width * 0.04,
     },
     timeText: {
       fontSize: width * 0.03,

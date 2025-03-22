@@ -17,54 +17,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Import 
 
 const { width, height } = Dimensions.get('window');
 
-// Dummy Data for conversation
-const messagesData = [
-  {
-    id: '1',
-    text: 'Hello, how are you?',
-    time: '8:24 AM',
-    type: 'received',
-  },
-  {
-    id: '2',
-    text: 'I am good man... You?',
-    time: '8:24 AM',
-    type: 'sent',
-  },
-  {
-    id: '3',
-    text: 'I\'m doing well, thank you for asking! How can I help you today?',
-    time: '8:24 AM',
-    type: 'received',
-  },
-  {
-    id: '4',
-    text: 'Can you send me 12,000 rupees now, I need to purchase a shoe',
-    time: '8:24 AM',
-    type: 'sent',
-  },
-  {
-    id: '5',
-    text: 'Cool I\'m sending now 😎',
-    time: '8:25 AM',
-    type: 'received',
-  },
-  {
-    id: '6',
-    text: 'Nice fit dude... 😎',
-    time: '8:26 AM',
-    type: 'received',
-    image: 'https://images.pexels.com/photos/1387022/pexels-photo-1387022.jpeg?cs=srgb&dl=book-aesthetic-books-old-books-open-books-1387022.jpg&fm=jpg',
-  },
-  {
-    id: '7',
-    // text: 'Nice fit dude... 😎',
-    time: '8:26 AM',
-    type: 'sent',
-    image: require('../assets/images/Avatar4.jpg'),
-  },
-];
-
 const MessageScreen = ({ route, navigation }) => {
   const { chatData } = route.params;
   const [messages, setMessages] = useState([]);
@@ -86,7 +38,14 @@ const MessageScreen = ({ route, navigation }) => {
         },
       });
       const data = await response.json();
-      setMessages(data);
+
+      // Ensure each message has a 'type' property based on senderId
+      const formattedMessages = data.map((message) => ({
+        ...message,
+        type: message.senderId === senderId ? 'sent' : 'received', // Determine type
+      }));
+
+      setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching chat messages:', error);
     }
@@ -224,25 +183,13 @@ const MessageScreen = ({ route, navigation }) => {
   };
 
   const renderMessage = ({ item }) => {
-    const isSent = item.type === 'sent';
-    const isStarred = starredMessages[item.id];
-  
-    const handleOpenDocument = (uri) => {
-      FileViewer.open(uri)
-        .then(() => {
-          console.log('Document opened successfully');
-        })
-        .catch((error) => {
-          console.log('Error opening document: ', error);
-        });
-    };
+    const isSent = item.type === 'sent'; // Check if the message is sent by the user
   
     return (
-      <TouchableOpacity
-        onLongPress={() => handleLongPress(item.id)}
+      <View
         style={[
           styles.messageContainer,
-          isSent ? styles.sentMessage : styles.receivedMessage,
+          isSent ? styles.sentMessageContainer : styles.receivedMessageContainer, // Apply alignment styles
         ]}
       >
         {item.file && (
@@ -266,38 +213,23 @@ const MessageScreen = ({ route, navigation }) => {
           <Text
             style={[
               styles.messageText,
-              isSent ? styles.sentMessageText : styles.receivedMessageText,
+              isSent ? styles.sentMessageText : styles.receivedMessageText, // Apply text color styles
             ]}
           >
             {item.text}
           </Text>
         )}
-        <View style={styles.timeContainer}>
-          <Text
-            style={[
-              styles.timeText,
-              isSent ? styles.sentTime : styles.receivedTime,
-            ]}
-          >
-            {item.time}
-          </Text>
-          {/* {isStarred && (
-            // <Ionicons name="star" size={width * 0.04} color="#FFD700" style={styles.starIcon} />
-          )} */}
-          {isSent && (
-            <View style={styles.timeImageContainer}>
-              <Image
-                source={chatData.profileImage}
-                style={styles.timeImage}
-              />
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
+        <Text
+          style={[
+            styles.messageTime,
+            isSent ? styles.sentMessageTime : styles.receivedMessageTime, // Apply time alignment styles
+          ]}
+        >
+          {item.time}
+        </Text>
+      </View>
     );
   };
-  
-  
   
 
   return (
