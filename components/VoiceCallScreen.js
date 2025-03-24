@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
-import SockJS from 'sockjs-client';
-import { Stomp } from '@stomp/stompjs';
 
 const VoiceCallScreen = ({ route }) => {
     const { chatData, isCallAccepted } = route.params;
@@ -49,7 +47,7 @@ const VoiceCallScreen = ({ route }) => {
 
     // Initialize WebSocket connection
     const initWebSocket = () => {
-        const socket = new SockJS('http://192.168.1.33:8080/ws');
+        const socket = new SockJS('http://192.168.1.36:8080/ws');
         stompClient.current = Stomp.over(() => socket);
 
         stompClient.current.connect({}, () => {

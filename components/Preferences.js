@@ -40,7 +40,7 @@ const Preferences = ({ navigation, route }) => {
   const handleFinish = async () => {
     if (selectedPreferences.length > 0) {
       try {
-        const response = await fetch('http://192.168.1.36:8080/api/users/update-preferences', {
+        const response = await fetch('http://192.168.211.102:8080/api/users/update-preferences', {
           method: 'PUT', // Change method to PUT
           headers: {
             'Content-Type': 'application/json',

@@ -28,12 +28,14 @@ const MessageScreen = ({ route, navigation }) => {
 
   const senderId = chatData.sender; // Use chatData.sender for senderId
   const receiverId = chatData.recipient; // Use chatData.recipitent for receiverId
-
+  // Generate unique IDs
+  const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const fetchChatMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token'); // Retrieve token
-      const response = await fetch(`http://192.168.1.36:8080/api/messages/chat/${senderId}/${receiverId}`, {
+      const response = await fetch(`http://192.168.211.102:8080/api/messages/chat/${senderId}/${receiverId}`, {
         headers: {
+          
           Authorization: `Bearer ${token}`, // Add token to headers
         },
       });
@@ -62,7 +64,7 @@ const MessageScreen = ({ route, navigation }) => {
 
       try {
         const token = await AsyncStorage.getItem('token'); // Retrieve token
-        await fetch('http://192.168.1.36:8080/api/messages/send', {
+        await fetch('http://192.168.211.102:8080/api/messages/send', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -105,6 +107,12 @@ const MessageScreen = ({ route, navigation }) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true }); // Ensure FlatList scrolls to the bottom when messages change
+    }
+  }, [messages]); // Trigger scrolling whenever the messages array changes
+
   const openAttachmentModal = () => setAttachmentModalVisible(true);
   const closeAttachmentModal = () => setAttachmentModalVisible(false);
 
@@ -124,7 +132,7 @@ const MessageScreen = ({ route, navigation }) => {
   
         // Add image to the messages list
         const newMessage = {
-          id: Date.now().toString(),
+          id: generateUniqueId(),
           image: uri,
           type: 'sent',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -156,7 +164,7 @@ const MessageScreen = ({ route, navigation }) => {
   
       // Add the picked document to the message list (e.g., 'messages' state)
       const newMessage = {
-        id: Math.random().toString(),  // Unique ID for the message
+        id: generateUniqueId(),  // Unique ID for the message
         type: 'sent',
         file: res.uri,  // Document URI or file path
         fileName: res.name,  // File name
@@ -261,12 +269,12 @@ const MessageScreen = ({ route, navigation }) => {
 
       <FlatList
         ref={flatListRef}
-        data={messages}
+        data={[...messages].sort((a, b) => new Date(a.time) - new Date(b.time))} // Sort messages by time (oldest to newest)
         renderItem={renderMessage}
-        keyExtractor={(item, index) => item.id || index.toString()} // Ensure a unique key
+        keyExtractor={(item, index) => item.id || `index-${index}`} // Ensure unique keys
         contentContainerStyle={styles.messagesList}
-        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
-        
+        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })} // Scroll to the bottom when content changes
+        onLayout={() => flatListRef.current.scrollToEnd({ animated: true })} // Scroll to the bottom on initial render
       />
 
       <View style={styles.footer}>
