@@ -60,6 +60,7 @@ const MessageScreen = ({ route, navigation }) => {
         receiverId,
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'sent',
       };
 
       try {
