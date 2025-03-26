@@ -9,7 +9,7 @@ export default function BlinkIDScreen({ navigation, route }) {
   const username = userData.id;
   const saveUsernameToBackend = async () => {
     try {
-      const response = await fetch('http://192.168.211.102:8080/api/users/save-username', {
+      const response = await fetch('http://192.168.100.195:8080/api/users/save-username', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

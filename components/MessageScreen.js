@@ -33,7 +33,7 @@ const MessageScreen = ({ route, navigation }) => {
   const fetchChatMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token'); // Retrieve token
-      const response = await fetch(`http://192.168.211.102:8080/api/messages/chat/${senderId}/${receiverId}`, {
+      const response = await fetch(`http://192.168.100.195:8080/api/messages/chat/${senderId}/${receiverId}`, {
         headers: {
           
           Authorization: `Bearer ${token}`, // Add token to headers
@@ -65,7 +65,7 @@ const MessageScreen = ({ route, navigation }) => {
 
       try {
         const token = await AsyncStorage.getItem('token'); // Retrieve token
-        await fetch('http://192.168.211.102:8080/api/messages/send', {
+        await fetch('http://192.168.100.195:8080/api/messages/send', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
