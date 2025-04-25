@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "436335395106",
+    "project_id": "blinkapp-a073e",
+    "storage_bucket": "blinkapp-a073e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436335395106:android:aa07cf2519bfe980fbe57b",
+        "android_client_info": {
+          "package_name": "com.blinkfrontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALupI1COmDHTTPG55QimyPqNHF0jNJGNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

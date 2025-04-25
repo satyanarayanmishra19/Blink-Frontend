@@ -8,7 +8,6 @@ import ChatModal from './ChatModal';
 import styles from './MessageScreen.styles';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
-import FileViewer from 'react-native-file-viewer';
 import { RewardContext } from './RewardContext';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
@@ -35,7 +34,7 @@ const MessageScreen = ({ route, navigation }) => {
       const token = await AsyncStorage.getItem('token'); // Retrieve token
       const response = await fetch(`http://192.168.100.195:8080/api/messages/chat/${senderId}/${receiverId}`, {
         headers: {
-          
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`, // Add token to headers
         },
       });
@@ -63,6 +62,10 @@ const MessageScreen = ({ route, navigation }) => {
         type: 'sent',
       };
 
+      setMessages((prevMessages) => [...prevMessages, newMessage]); // Update local state
+      setText(''); // Clear input
+      incrementReward(1);
+
       try {
         const token = await AsyncStorage.getItem('token'); // Retrieve token
         await fetch('http://192.168.100.195:8080/api/messages/send', {
@@ -74,9 +77,7 @@ const MessageScreen = ({ route, navigation }) => {
           body: JSON.stringify(newMessage),
         });
 
-        setMessages((prevMessages) => [...prevMessages, newMessage]); // Update local state
-        setText(''); // Clear input
-        incrementReward(1);
+        
       } catch (error) {
         console.error('Error sending message:', error);
       }

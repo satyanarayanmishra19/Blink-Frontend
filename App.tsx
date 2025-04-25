@@ -1,10 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect } from 'react';
 import SplashScreen from './components/SplashScreen';
 import HomeScreen from './components/HomeScreen';
-// import { enableScreens } from 'react-native-screens';
-// import { Text } from 'react-native';
 import GenerateIDScreen from './components/IdCreation';
 import { GlobalProvider } from './components/GlobalContext';
 import BlinkIDScreen from './components/BlinkIdScreen';
@@ -32,8 +30,6 @@ import Help from './components/Help';
 import AdvanceOptionIOS from './components/AdvanceOptionsIOS';
 import BackupScreen from './components/BackUpScreen';
 import VerificationLevelsScreen from './components/VerificationLevelsScreen';
-// import Trying from './components/Trying';
-// import Ionicons from 'react-native-vector-icons/Ionicons';
 import VoiceCallScreen from './components/VoiceCallScreen';
 import ArchivedChats from './components/ArchivedChats';
 import GroupProfile from './components/GroupProfile';
@@ -49,11 +45,30 @@ import GroupName from './components/GroupName';
 import GroupChats from './components/GroupChats';
 import { RewardProvider } from './components/RewardContext';
 import ScribbleScreen from './components/ScribbleScreen';
-
+import firebaseService from './components/FirebaseService';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  useEffect(() => {
+    const setupFirebase = async () => {
+      // Request permission for notifications
+      const hasPermission = await firebaseService.requestUserPermission();
+
+      if (hasPermission) {
+        // Get FCM token
+        const fcmToken = await firebaseService.getFCMToken();
+
+        if (fcmToken) {
+          // Register token with backend
+          await firebaseService.registerTokenWithBackend(fcmToken);
+        }
+      }
+    };
+
+    setupFirebase();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
     <GlobalProvider>
@@ -71,7 +86,18 @@ export default function App() {
             <Stack.Screen name="BottomTabs" component={BottomTabNavigator} options={{headerShown: false}}/>
             <Stack.Screen name="Barcode" component={Barcode} options={{headerShown: false}}/>
             <Stack.Screen name="BlinkWeb" component={BlinkWeb} options={{headerShown: false}}/>
-            <Stack.Screen name="MessageScreen" component={MessageScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="MessageScreen" component={MessageScreen} options={{headerShown: false}}
+              listeners={({ navigation }) => ({
+                focus: () => {
+                  // Setup notification listeners with navigation available
+                  firebaseService.setupNotificationListeners(navigation);
+                },
+                blur: () => {
+                  // Remove listeners when screen is unfocused
+                  firebaseService.removeNotificationListeners();
+                },
+              })}
+            />
             <Stack.Screen name="PrivacySettings" component={PrivacySettings} options={{headerShown: false}}/>
             <Stack.Screen name="Security" component={Security} options={{headerShown: false}}/>
             <Stack.Screen name="Appearance" component={Appearance} options={{headerShown: false}}/>

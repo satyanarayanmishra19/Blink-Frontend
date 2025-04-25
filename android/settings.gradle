@@ -1,6 +1,21 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
-plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+pluginManagement {
+    repositories {
+        google()              // ✅ Needed for Google plugins
+        gradlePluginPortal()  // ✅ Needed for most community plugins
+        mavenCentral()
+        maven { url '../node_modules/react-native/android' }
+    }
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+
 rootProject.name = 'BlinkFrontend'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
