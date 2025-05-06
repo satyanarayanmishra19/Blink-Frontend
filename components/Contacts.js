@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, StatusBar, Dimensions, TextInput, Share, Modal, TouchableWithoutFeedback } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import styles from './Contacts.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { GlobalContext } from './GlobalContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 const scaleSize = size => (width / 375) * size;
@@ -19,76 +20,97 @@ const formatPreferences = (preferencesString) => {
 };
 
 const contactsList = [
-  { id: '100', name: 'Jane Doe', phone: '(603) 555-0123', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'MERN' },
-  { id: '99', name: 'Jane Doe', phone: '(603) 555-0123', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'MEAN' },
-  { id: '98', name: 'Leslie Alexander', phone: '(684) 555-0102', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'Google Cloud' },
-  { id: '97', name: 'Nguyen, Shane', phone: '(702) 555-0122', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'AWS' },
-  { id: '96', name: 'Bessie', phone: '(229) 555-0109', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'MERN, Django, Google Cloud, AWS' },
-  { id: '95', name: 'Pasztor Kira', phone: '(239) 555-0108', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'MEAN, AWS, MERN' },
-  { id: '94', name: 'Cooper Kristin', phone: '(907) 555-0101', idCode: 'EBKSJ67SKS', profileImage: require('../assets/images/Avatar3.jpg'), preference: 'Google Cloud, AWS' },
 ];
 
 const Contacts = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const { acceptedChats, setAcceptedChats } = useContext(GlobalContext);
-  const { userData } = useContext(GlobalContext);
-  
-  // You can replace this with your actual notification count
-  const notificationCount = 3;
+  const [connections, setConnections] = useState([]); // State to store fetched connections
+  const [loading, setLoading] = useState(false); // State to handle loading
+  const [error, setError] = useState(null); // State to handle errors
+  const { userData, setAcceptedChats } = useContext(GlobalContext); // Add setAcceptedChats to context
+  const username = userData?.id; // Assuming username is part of userData
 
-  // Filter contacts based on the search query
-  const filteredContacts = contactsList.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const fetchConnections = async (search = '') => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`http://192.168.100.195:8080/api/chats/${username}?search=${search}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('Fetched connections:', data);
+      setConnections(data); // Update connections state
+    } catch (err) {
+      console.error('Error fetching connections:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConnections(); // Fetch all connections on component mount
+  }, [username]);
+
+  const addChatToStorage = async (newChat) => {
+    try {
+      const storedChats = await AsyncStorage.getItem('chats'); // Load existing chats
+      const chats = storedChats ? JSON.parse(storedChats) : [];
+      const updatedChats = [...chats, newChat];
+      await AsyncStorage.setItem('chats', JSON.stringify(updatedChats)); // Save updated chats
+    } catch (error) {
+      console.error('Error adding chat to storage:', error);
+    }
+  };
+
+  const handleContactPress = (item) => {
+    const newChat = {
+      id: item.id,
+      name: item.name,
+      profileImage: item.profileImage || 'https://via.placeholder.com/150',
+      lastMessage: '',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      badge: null,
+      username: item.username,
+    };
+
+    setAcceptedChats((prevChats) => [...prevChats, newChat]); // Update global state
+    addChatToStorage(newChat); // Persist the new chat
+
+    navigation.navigate('MessageScreen', {
+      chatData: {
+        id: item.id,
+        name: item.name,
+        profileImage: item.profileImage,
+        sender: username,
+        recipient: item.username,
+      },
+    });
+  };
+
+  const filteredContacts = connections.filter(contact =>
+    contact.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleShare = async () => {
-    try {
-      const result = await Share.share({
-        message: `Hi, it's me! Sharing my Blink profile: ${userData.id}`,
-      });
-
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log(`Shared with: ${result.activityType}`);
-        } else {
-          console.log('Content shared');
-        }
-      } else if (result.action === Share.dismissedAction) {
-        console.log('Share dismissed');
-      }
-    } catch (error) {
-      console.error('Error sharing content:', error);
-    }
-  };
-
-  const handleAccept = () => {
-    if (selectedContact) {
-      setAcceptedChats(prev => [...prev, selectedContact]);
-      setModalVisible(false);
-    }
-  };
-
-  const handleReject = () => {
-    setModalVisible(false);
-    setSelectedContact(null);
-  };
-
-  const handleContactPress = contact => {
-    setSelectedContact(contact);
-    setModalVisible(true);
-  };
-
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleContactPress(item)}>
+    <TouchableOpacity
+      onPress={() => handleContactPress(item)} // Navigate to MessageScreen on single press
+    >
       <View style={styles.contactItem}>
-        <Image source={item.profileImage} style={styles.avatar} />
+        <Image source={{ uri: item.profileImage || 'https://via.placeholder.com/150' }} style={styles.avatar} />
         <View style={styles.contactInfo}>
           <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.phone}>{item.idCode}</Text>
+          <Text style={styles.phone}>{item.phone}</Text>
         </View>
-        <Text style={[styles.phone, { color: 'grey' }]}>{formatPreferences(item.preference)}</Text>
+        <Text style={[styles.phone, { color: 'grey' }]}>
+          {item.preferences?.join(', ') || 'No preferences'}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -97,28 +119,13 @@ const Contacts = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
       <View style={styles.header}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
             source={require('../assets/images/Blink.png')}
             style={styles.logo}
             resizeMode="contain"
           />
           <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#3498db' }}>BLINK</Text>
-        </View>
-        <View style={{flexDirection: 'row', gap: 10}}>
-          {/* <TouchableOpacity style={{ position: 'relative' }}>
-            <Feather name="bell" size={24} color="#007aff" />
-            {notificationCount > 0 && (
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity> */}
-          <TouchableOpacity style={{flexDirection: 'row', gap: 10, alignItems:'center'}} onPress={handleShare}>
-            <Feather name="share-2" size={24} color="#007aff" />
-          </TouchableOpacity>
         </View>
       </View>
       <View style={{ paddingHorizontal: 20 }}>
@@ -135,40 +142,16 @@ const Contacts = ({ navigation }) => {
           />
         </View>
       </View>
-      
+
+      {loading && <Text>Loading...</Text>}
+      {error && <Text>Error: {error}</Text>}
+
       <FlatList
         data={filteredContacts}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
       />
-      <TouchableOpacity style={styles.addButton}>
-        <MaterialIcons name="add" size={28} color="white" />
-      </TouchableOpacity>
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>
-                Send request to {selectedContact?.name}?
-              </Text>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleAccept} style={styles.acceptButton}>
-                  <Text style={styles.buttonText}>Yes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleReject} style={styles.rejectButton}>
-                  <Text style={styles.buttonText}>No</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 };

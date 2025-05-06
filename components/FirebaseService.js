@@ -1,8 +1,8 @@
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 
 class FirebaseService {
-  // Request user permission for notifications
   async requestUserPermission() {
     const authStatus = await messaging().requestPermission();
     const enabled =
@@ -16,14 +16,10 @@ class FirebaseService {
     return false;
   }
 
-  // Get FCM token and store it
   async getFCMToken() {
     try {
-      // Check if we have a token saved
       let fcmToken = await AsyncStorage.getItem('fcmToken');
-      
       if (!fcmToken) {
-        // Get new token if we don't have one saved
         fcmToken = await messaging().getToken();
         if (fcmToken) {
           await AsyncStorage.setItem('fcmToken', fcmToken);
@@ -37,10 +33,9 @@ class FirebaseService {
     }
   }
 
-  // Send FCM token to backend
   async registerTokenWithBackend(token) {
     try {
-      const userToken = await AsyncStorage.getItem('token'); // JWT token
+      const userToken = await AsyncStorage.getItem('token');
       const response = await fetch('http://192.168.100.195:8080/api/fcm/token', {
         method: 'POST',
         headers: {
@@ -49,7 +44,7 @@ class FirebaseService {
         },
         body: JSON.stringify({ token })
       });
-      
+
       if (response.ok) {
         console.log('FCM token registered with backend');
         return true;
@@ -63,55 +58,54 @@ class FirebaseService {
     }
   }
 
-  // Setup notification listeners
+  async createDefaultChannel() {
+    await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+      importance: AndroidImportance.HIGH,
+    });
+  }
+
   setupNotificationListeners(navigation) {
-    // Handle notifications when app is in foreground
+    this.createDefaultChannel();
+
     this.foregroundSubscription = messaging().onMessage(async remoteMessage => {
       console.log('Foreground notification received:', remoteMessage);
-      
-      // Show in-app notification or update UI
-      // You could use a library like react-native-flash-message for this
+
+      const { title, body } = remoteMessage.data || {};
+
+      await notifee.displayNotification({
+        title: title || 'New Message',
+        body: body || 'You have a new message',
+        android: {
+          channelId: 'default',
+          smallIcon: 'ic_launcher',
+        },
+      });
     });
 
-    // Handle notification when app is in background and user taps the notification
     this.backgroundSubscription = messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('Notification opened from background state:', remoteMessage);
-      
-      // Navigate to the chat screen with the sender
-      if (remoteMessage.data && remoteMessage.data.senderId) {
-        navigation.navigate('MessageScreen', { 
-          chatData: {
-            sender: remoteMessage.data.senderId,
-            // You might need to fetch other details or have them in the notification
-          }
+      if (remoteMessage.data?.senderId) {
+        navigation.navigate('MessageScreen', {
+          chatData: { sender: remoteMessage.data.senderId }
         });
       }
     });
 
-    // Check if app was opened from a notification when closed (quit state)
     messaging()
       .getInitialNotification()
       .then(remoteMessage => {
-        if (remoteMessage) {
-          console.log('Notification opened app from quit state:', remoteMessage);
-          
-          // Navigate to appropriate screen once app is ready
-          if (remoteMessage.data && remoteMessage.data.senderId) {
-            // You might want to delay this until app is fully loaded
-            setTimeout(() => {
-              navigation.navigate('MessageScreen', { 
-                chatData: {
-                  sender: remoteMessage.data.senderId,
-                  // You might need to fetch other details
-                }
-              });
-            }, 1000);
-          }
+        if (remoteMessage?.data?.senderId) {
+          setTimeout(() => {
+            navigation.navigate('MessageScreen', {
+              chatData: { sender: remoteMessage.data.senderId }
+            });
+          }, 1000);
         }
       });
   }
 
-  // Clean up listeners
   removeNotificationListeners() {
     if (this.foregroundSubscription) this.foregroundSubscription();
     if (this.backgroundSubscription) this.backgroundSubscription();

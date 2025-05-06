@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, TextInput, StyleSheet, FlatList, TouchableOpacity, Text, Image, StatusBar } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+// import BottomNavigationBar from './BottomNavigationBar';
 import Header from './Header';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Foundation from 'react-native-vector-icons/Foundation';
@@ -10,20 +11,38 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import Icon from 'react-native-vector-icons/Ionicons';
 import styles from './Chats.styles';
 import { GlobalContext } from './GlobalContext';
-
 // Sample chat data
-const sampleConnections = [];
+const sampleConnections = [
+];
 
-const Chats = ({ navigation, route }) => {
-  const { userData } = useContext(GlobalContext); // Access userData from GlobalContext
+const Chats = ({ navigation }) => {
+  const { userData } = useContext(GlobalContext);
   const [searchQuery, setSearchQuery] = useState('');
+  const { acceptedChats } = useContext(GlobalContext);
   const [connections, setConnections] = useState([]);
   const [archivedConnections, setArchivedConnections] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isLongPressed, setIsLongPressed] = useState(false);
-  const [loading, setLoading] = useState(false); // Add loading state
-  const [error, setError] = useState(null); // Add error state
   const username = userData.id;
+
+  const saveChatsToStorage = async (chats) => {
+    try {
+      await AsyncStorage.setItem('chats', JSON.stringify(chats)); // Save chats to AsyncStorage
+    } catch (error) {
+      console.error('Error saving chats to storage:', error);
+    }
+  };
+
+  const loadChatsFromStorage = async () => {
+    try {
+      const storedChats = await AsyncStorage.getItem('chats'); // Load chats from AsyncStorage
+      if (storedChats) {
+        setConnections(JSON.parse(storedChats)); // Update state with stored chats
+      }
+    } catch (error) {
+      console.error('Error loading chats from storage:', error);
+    }
+  };
 
   const sortConnectionsByTime = (connections) => {
     return connections.slice().sort((a, b) => {
@@ -33,71 +52,57 @@ const Chats = ({ navigation, route }) => {
     });
   };
 
-  // Fetch connections from the API with search query
-  const fetchConnections = async (search = '') => {
-    setLoading(true); // Set loading to true before fetching
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const preferences = userData.preferences;
-      const response = await fetch(`http://192.168.100.195:8080/api/chats/${username}?search=${search}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        console.log('Fetched connections:', data);
-        setConnections(data);
-      } else {
-        throw new Error('Unexpected response format');
-      }
-    } catch (err) {
-      console.error('Error fetching connections:', err.message);
-      setError(err.message);
-    } finally {
-      setLoading(false); // Set loading to false after fetching
-    }
-  };
+  useEffect(() => {
+    loadChatsFromStorage(); // Load chats when the component mounts
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (searchQuery !== '') {
-        console.log(`Fetching filtered connections for query: ${searchQuery}`);
-        await fetchConnections(searchQuery); // Fetch filtered connections
-      } else {
-        console.log('Fetching all connections');
-        await fetchConnections(); // Fetch all connections
-      }
-    };
-
-    fetchData();
-  }, [searchQuery, username]); // Monitor searchQuery and username changes
-
-  useEffect(() => {
-    setConnections(prevConnections => [...prevConnections, ...username]);
-  }, [username]);
+    setConnections(prevConnections => [...prevConnections, ...acceptedChats]);
+  }, [acceptedChats]);
 
   useEffect(() => {
     setConnections(sortConnectionsByTime(sampleConnections));
   }, []);
 
-  const filteredConnections = connections.filter(connection => connection.id !== username)
-  .filter(connection => connection.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    // Update connections when acceptedChats changes, ensuring no duplicates
+    setConnections((prevConnections) => {
+      const connectionMap = new Map(); // Use a Map to ensure unique entries by ID
+
+      // Add existing connections to the Map
+      prevConnections.forEach((connection) => {
+        connectionMap.set(connection.id, connection);
+      });
+
+      // Add new acceptedChats to the Map
+      acceptedChats.forEach((chat) => {
+        if (!connectionMap.has(chat.id)) {
+          connectionMap.set(chat.id, chat);
+        }
+      });
+
+      // Convert the Map back to an array and sort by time
+      return sortConnectionsByTime(Array.from(connectionMap.values()));
+    });
+  }, [acceptedChats]);
+
+  useEffect(() => {
+    saveChatsToStorage(connections); // Save chats whenever they change
+  }, [connections]);
+
+  const filteredConnections = connections.filter(connection =>
+    connection.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const archiveChat = (itemId) => {
     const newConnections = connections.filter(connection => connection.id !== itemId);
     const selectedChat = connections.find(connection => connection.id === itemId);
-
+    
     // Update the archived chats state
     if (selectedChat) {
       setArchivedConnections(prevArchivedConnections => [...prevArchivedConnections, selectedChat]);
     }
-
+    
     // Update the connections state
     setConnections(sortConnectionsByTime(newConnections));
   };
@@ -107,13 +112,19 @@ const Chats = ({ navigation, route }) => {
   };
 
   const handleChatPress = (item) => {
+    setConnections(prevConnections =>
+      prevConnections.map(connection =>
+        connection.id === item.id ? { ...connection, badge: null } : connection
+      )
+    );
+    // Ensure all necessary properties are passed to MessageScreen
     navigation.navigate('MessageScreen', {
       chatData: {
-        id: item.id, // Pass the connection ID if needed
-        name: item.name, // Pass the recipient's name
-        profileImage: item.profileImage, // Pass the profile image if needed
-        sender: username, // Pass current user's username as sender
-        recipient: item.username
+        id: item.id, // Unique chat ID
+        name: item.name, // Chat name
+        profileImage: item.profileImage || 'https://via.placeholder.com/150', // Fallback profile image
+        sender: username, // Current user's username
+        recipient: item.username, // Recipient's username
       },
     });
   };
@@ -139,20 +150,18 @@ const Chats = ({ navigation, route }) => {
           style={[styles.chatItem, { backgroundColor: selectedIds.includes(item.id) ? '#ADD8E6' : '#F9F9F9' }]}
           onPress={() => handleChatPress(item)}
         >
-          <Image source={item.profileImage} style={styles.profilePicture} />
+          <Image source={{ uri: item.profileImage }} style={styles.profilePicture} />
           <View style={styles.chatContent}>
             <View style={styles.chatHeader}>
               <Text style={styles.userName}>{item.name}</Text>
               <Text style={styles.chatTime}>{item.time}</Text>
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', }}>
-              <Text style={styles.lastMessage}>{item.lastMessage}</Text>
-              {item.badge && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.badge}</Text>
-                </View>
-              )}
-            </View>
+            <Text style={styles.lastMessage}>{item.lastMessage}</Text>
+            {item.badge && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.badge}</Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       </Swipeable>
@@ -168,30 +177,27 @@ const Chats = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor={'#F9F9F9'} barStyle={'dark-content'} />
-      {/* Display loading indicator or error message */}
-      {loading && <Text>Loading...</Text>}
-      {error && <Text>Error: {error}</Text>}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={require('../assets/images/Blink.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#3498db' }}>BLINK</Text>
+    <StatusBar backgroundColor={'#F9F9F9'} barStyle={'dark-content'}/>
+    <View style={styles.header}>
+      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <Image
+          source={require('../assets/images/Blink.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#3498db' }}>BLINK</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
-          {/* <Entypo name="dots-three-vertical" size={24} color="black" /> */}
-          <Text style={{ color: '#007aff' }}>GROUP CHATS</Text>
-        </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
+              {/* <Entypo name="dots-three-vertical" size={24} color="black" /> */}
+              <Text style={{color: '#007aff'}}>GROUP CHATS</Text>
+            </TouchableOpacity>
       </View>
 
       <View style={styles.contentContainer}>
         <View style={{ paddingHorizontal: 20 }}>
           <View style={styles.searchContainer}>
             <TouchableOpacity>
-              <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
+            <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
             </TouchableOpacity>
             <TextInput
               style={styles.searchInput}
@@ -206,9 +212,11 @@ const Chats = ({ navigation, route }) => {
         {archivedConnections.length > 0 && renderArchivedSection()}
 
         <FlatList
-          data={filteredConnections}
+          data={searchQuery ? filteredConnections : connections}
           renderItem={renderChatItem}
-          keyExtractor={item => item.id.toString()} // Ensure keys are unique
+          keyExtractor={(item, index) => `${item.id}-${index}`} // Use a combination of id and index for unique keys
+          style={styles.chatContainer}
+          showsVerticalScrollIndicator={false}
         />
       </View>
       {/* <BottomNavigationBar navigation={navigation} /> */}
@@ -217,5 +225,6 @@ const Chats = ({ navigation, route }) => {
 };
 
 // Styles
+
 
 export default Chats;

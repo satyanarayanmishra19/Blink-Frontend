@@ -41,10 +41,12 @@ const MessageScreen = ({ route, navigation }) => {
       const data = await response.json();
 
       // Ensure each message has a 'type' property based on senderId
-      const formattedMessages = data.map((message) => ({
-        ...message,
-        type: message.senderId === senderId ? 'sent' : 'received', // Determine type
-      }));
+      const formattedMessages = data
+        .map((message) => ({
+          ...message,
+          type: message.senderId === senderId ? 'sent' : 'received', // Determine type
+        }))
+        .sort((a, b) => new Date(a.time) - new Date(b.time)); // Sort messages by time (oldest to newest)
 
       setMessages(formattedMessages);
     } catch (error) {
@@ -271,7 +273,7 @@ const MessageScreen = ({ route, navigation }) => {
 
       <FlatList
         ref={flatListRef}
-        data={[...messages].sort((a, b) => new Date(a.time) - new Date(b.time))} // Sort messages by time (oldest to newest)
+        data={messages} // Messages are already sorted in fetchChatMessages
         renderItem={renderMessage}
         keyExtractor={(item, index) => item.id || `index-${index}`} // Ensure unique keys
         contentContainerStyle={styles.messagesList}
