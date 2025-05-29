@@ -34,7 +34,7 @@ const Contacts = ({ navigation }) => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`http://192.168.100.195:8080/api/chats/${username}?search=${search}`, {
+      const response = await fetch(`http://172.30.4.184:8080/api/chats/${username}?search=${search}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,

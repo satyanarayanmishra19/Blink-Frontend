@@ -246,7 +246,7 @@ const ProfileComponent = ({ navigation, route }) => {
         userName: username,
         phoneNumber: number,
       };
-      const response = await fetch('http://192.168.100.195:8080/api/users/update-number', {
+      const response = await fetch('http://172.30.4.184:8080/api/users/update-number', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ const ProfileComponent = ({ navigation, route }) => {
         email: email,
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://192.168.100.195:8080/api/users/update-email', {
+      const response = await fetch('http://172.30.4.184:8080/api/users/update-email', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -300,7 +300,7 @@ const ProfileComponent = ({ navigation, route }) => {
         name: name,
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://192.168.100.195:8080/api/users/update-name', {
+      const response = await fetch('http://172.30.4.184:8080/api/users/update-name', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -326,7 +326,7 @@ const ProfileComponent = ({ navigation, route }) => {
         otp: otp.join(''),
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://192.168.100.195:8080/api/users/verify-email-otp', {
+      const response = await fetch('http://172.30.4.184:8080/api/users/verify-email-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +354,7 @@ const ProfileComponent = ({ navigation, route }) => {
         userName: username,
         otp: otp.join(''),
       };
-      const response = await fetch('http://192.168.100.195:8080/api/users/verify-phone-otp', {
+      const response = await fetch('http://172.30.4.184:8080/api/users/verify-phone-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

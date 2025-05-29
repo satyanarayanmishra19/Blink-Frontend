@@ -36,7 +36,7 @@ class FirebaseService {
   async registerTokenWithBackend(token) {
     try {
       const userToken = await AsyncStorage.getItem('token');
-      const response = await fetch('http://192.168.100.195:8080/api/fcm/token', {
+      const response = await fetch('http://172.30.4.184:8080/api/fcm/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
