@@ -16,7 +16,7 @@ export default function BottomTabNavigator({ route }) {
   const username = route?.params?.username || userData?.id || '';
   return (
     <Tab.Navigator
-      initialRouteName="Chats"
+      initialRouteName="Contact"
       screenOptions={({ route }) => ({
         tabBarActiveTintColor: 'black',
         tabBarInactiveTintColor: 'gray',

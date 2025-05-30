@@ -51,6 +51,7 @@ import ScribbleScreen from './components/ScribbleScreen';
 import { GlobalProvider } from './components/GlobalContext';
 import { RewardProvider } from './components/RewardContext';
 import firebaseService from './components/FirebaseService';
+import TwoFactorScreen from './components/TwoFactorScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -122,6 +123,7 @@ export default function App() {
               <Stack.Screen name="BlinkSafe" component={BlinkSafe} options={{ headerShown: false }} />
               <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
               <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+              <Stack.Screen name="TwoFactorScreen" component={TwoFactorScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Preferences" component={Preferences} options={{ headerShown: false }} />
               <Stack.Screen name="BottomTabs" component={BottomTabNavigator} options={{ headerShown: false }} />
               <Stack.Screen name="Barcode" component={Barcode} options={{ headerShown: false }} />

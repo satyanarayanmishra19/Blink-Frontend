@@ -9,6 +9,7 @@ const Preferences = ({ navigation, route }) => {
   const { username } = route.params; // Add this line to get the username from route params
 
   const preferenceList = [
+    { id: '0', title: 'Java', description: 'Development and enterprise solutions' },
     { id: '1', title: 'MERN', description: 'It is a long established fact that a reader will be' },
     { id: '2', title: 'MEAN', description: 'It is a long established fact that a reader will be' },
     { id: '3', title: 'LAMP', description: 'It is a long established fact that a reader will be' },

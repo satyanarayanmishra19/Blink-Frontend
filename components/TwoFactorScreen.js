@@ -1,19 +1,64 @@
-import React, { useContext, useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Modal } from 'react-native';
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Modal, Alert } from 'react-native';
 import { GlobalContext } from './GlobalContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const TwoFA = ({ navigation, route }) => {
-  // const { id } = route.params;
-  const {updateUserData} = useContext(GlobalContext);
+const TwoFA = ({ navigation }) => {
+  const { userData, updateUserData } = useContext(GlobalContext);
+  const username = userData?.id;
+  const email = userData?.email;
   const [modalVisible, setModalVisible] = useState(false);
   const [secondModalVisible, setSecondModalVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(''); // State for error message
-  
-  // OTP related state
+  const [errorMessage, setErrorMessage] = useState('');
   const [otp, setOtp] = useState(['', '', '', '']);
   const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+
+  // Send OTP on mount
+  useEffect(() => {
+    sendTwoFactorOtp();
+  }, []);
+
+  // Send OTP to backend
+  const sendTwoFactorOtp = async () => {
+    setErrorMessage('');
+    try {
+      const response = await fetch('http://172.30.4.184:8080/api/two-factor-auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email }),
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        setErrorMessage(responseData.error || "Failed to send OTP.");
+      }
+    } catch (error) {
+      setErrorMessage("Failed to send OTP.");
+    }
+  };
+
+  // Verify OTP with backend
+  const verifyTwoFactorOtp = async () => {
+    setErrorMessage('');
+    try {
+      const response = await fetch('http://172.30.4.184:8080/api/two-factor-auth/verify-email-otp', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, otp: otp.join('') }),
+      });
+      const responseData = await response.json();
+      if (response.ok) {
+        updateUserData({ email });
+        navigation.navigate('BottomTabs');
+      } else {
+        setErrorMessage(responseData.error || "Failed to verify OTP.");
+        Alert.alert("Error", responseData.error || "Failed to verify OTP.");
+      }
+    } catch (error) {
+      setErrorMessage("Failed to verify OTP.");
+      Alert.alert("Error", "Failed to verify OTP.");
+    }
+  };
 
   const handleOtpChange = (text, index) => {
     const newOtp = [...otp];
@@ -36,15 +81,8 @@ const TwoFA = ({ navigation, route }) => {
       setErrorMessage('Please enter a complete 4-digit OTP');
       return;
     }
-    
-    // Clear error message if OTP is complete
     setErrorMessage('');
-    
-    // Add your OTP verification logic here
-    console.log('OTP entered:', otpString);
-    
-    // Navigate to next screen or perform verification
-    // navigation.navigate('NextScreen');
+    verifyTwoFactorOtp();
   };
 
   return (

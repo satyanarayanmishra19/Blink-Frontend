@@ -56,7 +56,7 @@ const Login = ({ navigation, route }) => {
           countryCode: '+91'
         });
 
-        navigation.replace('BottomTabs'); // Navigate to the next screen
+        navigation.replace('TwoFactorScreen'); // Navigate to the next screen
       } else {
         setErrorMessage('Invalid credentials. Please try again.');
       }

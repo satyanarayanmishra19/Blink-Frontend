@@ -270,7 +270,7 @@ const ProfileComponent = ({ navigation, route }) => {
   const updateUserEmail = async () => {
     try {
       const body = {
-        userName: username,
+        username: username,
         email: email,
       };
       const token = await AsyncStorage.getItem('token');
@@ -322,7 +322,7 @@ const ProfileComponent = ({ navigation, route }) => {
   const verifyEmailOtp = async () => {
     try {
       const body = {
-        userName: username,
+        username: username,
         otp: otp.join(''),
       };
       const token = await AsyncStorage.getItem('token');
