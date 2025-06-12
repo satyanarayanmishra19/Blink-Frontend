@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { GlobalContext } from './GlobalContext';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const Login = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ const Login = ({ navigation, route }) => {
     setErrorMessage('');
   
     try {
-      const response = await fetch('http://172.30.4.184:8080/api/auth/login', {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,7 +32,7 @@ const Login = ({ navigation, route }) => {
         // Save token to AsyncStorage for authentication persistence
         await AsyncStorage.setItem('token', token);
         // Fetch user details
-        const userDetailsResponse = await fetch(`http://172.30.4.184:8080/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
+        const userDetailsResponse = await fetch(`${BASE_URL}/api/users/get-user-details?email=${encodeURIComponent(email)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

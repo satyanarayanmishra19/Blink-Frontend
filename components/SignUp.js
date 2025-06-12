@@ -6,6 +6,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './SignUp.styles';
 import countries from './CountriesList';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 
 const SignUp = ({ navigation, route }) => {
@@ -135,7 +136,7 @@ const SignUp = ({ navigation, route }) => {
     if (validateInputsAndPasswords()) {
       try {
         // Send signup request
-        const response = await fetch('http://172.30.4.184:8080/api/users/signup', {
+        const response = await fetch(`${BASE_URL}/api/users/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, name, email, phone, password: password }),

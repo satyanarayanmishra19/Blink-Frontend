@@ -2,6 +2,7 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Modal, Alert } from 'react-native';
 import { GlobalContext } from './GlobalContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const TwoFA = ({ navigation }) => {
   const { userData, updateUserData } = useContext(GlobalContext);
@@ -22,7 +23,7 @@ const TwoFA = ({ navigation }) => {
   const sendTwoFactorOtp = async () => {
     setErrorMessage('');
     try {
-      const response = await fetch('http://172.30.4.184:8080/api/two-factor-auth/send-otp', {
+      const response = await fetch(`${BASE_URL}/api/two-factor-auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email }),
@@ -40,7 +41,7 @@ const TwoFA = ({ navigation }) => {
   const verifyTwoFactorOtp = async () => {
     setErrorMessage('');
     try {
-      const response = await fetch('http://172.30.4.184:8080/api/two-factor-auth/verify-email-otp', {
+      const response = await fetch(`${BASE_URL}/api/two-factor-auth/verify-email-otp`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'},

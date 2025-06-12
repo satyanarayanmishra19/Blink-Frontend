@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { GlobalContext } from './GlobalContext';
 import styles from './BlinkIdScreen.styles';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 export default function BlinkIDScreen({ navigation, route }) {
   // const { id } = route.params;
@@ -9,7 +10,7 @@ export default function BlinkIDScreen({ navigation, route }) {
   const username = userData.id;
   const saveUsernameToBackend = async () => {
     try {
-      const response = await fetch('http://172.30.4.184:8080/api/users/save-username', {
+      const response = await fetch(`${BASE_URL}/api/users/save-username`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

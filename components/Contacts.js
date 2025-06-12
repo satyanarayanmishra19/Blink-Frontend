@@ -6,6 +6,7 @@ import styles from './Contacts.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { GlobalContext } from './GlobalContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const { width, height } = Dimensions.get('window');
 const scaleSize = size => (width / 375) * size;
@@ -34,7 +35,7 @@ const Contacts = ({ navigation }) => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`http://172.30.4.184:8080/api/chats/${username}?search=${search}`, {
+      const response = await fetch(`${BASE_URL}/api/chats/${username}?search=${search}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,

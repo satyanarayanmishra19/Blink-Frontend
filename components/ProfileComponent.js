@@ -12,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import styles from './ProfileComponent.styles';
 import { RewardContext } from './RewardContext';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const { width, height } = Dimensions.get('window');
 const scaleSize = size => (width / 375) * size;
@@ -246,7 +247,7 @@ const ProfileComponent = ({ navigation, route }) => {
         userName: username,
         phoneNumber: number,
       };
-      const response = await fetch('http://172.30.4.184:8080/api/users/update-number', {
+      const response = await fetch(`${BASE_URL}/api/users/update-number`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -274,7 +275,7 @@ const ProfileComponent = ({ navigation, route }) => {
         email: email,
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://172.30.4.184:8080/api/users/update-email', {
+      const response = await fetch(`${BASE_URL}/api/users/update-email`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -300,7 +301,7 @@ const ProfileComponent = ({ navigation, route }) => {
         name: name,
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://172.30.4.184:8080/api/users/update-name', {
+      const response = await fetch(`${BASE_URL}/api/users/update-name`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -326,7 +327,7 @@ const ProfileComponent = ({ navigation, route }) => {
         otp: otp.join(''),
       };
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('http://172.30.4.184:8080/api/users/verify-email-otp', {
+      const response = await fetch(`${BASE_URL}/api/users/verify-email-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +355,7 @@ const ProfileComponent = ({ navigation, route }) => {
         userName: username,
         otp: otp.join(''),
       };
-      const response = await fetch('http://172.30.4.184:8080/api/users/verify-phone-otp', {
+      const response = await fetch(`${BASE_URL}/api/users/verify-phone-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

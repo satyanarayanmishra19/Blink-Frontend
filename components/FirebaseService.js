@@ -1,6 +1,7 @@
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 class FirebaseService {
   async requestUserPermission() {
@@ -36,7 +37,7 @@ class FirebaseService {
   async registerTokenWithBackend(token) {
     try {
       const userToken = await AsyncStorage.getItem('token');
-      const response = await fetch('http://172.30.4.184:8080/api/fcm/token', {
+      const response = await fetch(`${BASE_URL}/api/fcm/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

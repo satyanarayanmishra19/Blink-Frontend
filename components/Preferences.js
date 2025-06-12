@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, StatusBar } from 'react-native';
 import { GlobalContext } from './GlobalContext';
 import styles from './Preferences.styles';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const Preferences = ({ navigation, route }) => {
   const [selectedPreferences, setSelectedPreferences] = useState([]);
@@ -41,7 +42,7 @@ const Preferences = ({ navigation, route }) => {
   const handleFinish = async () => {
     if (selectedPreferences.length > 0) {
       try {
-        const response = await fetch('http://172.30.4.184:8080/api/users/update-preferences', {
+        const response = await fetch(`${BASE_URL}/api/users/update-preferences`, {
           method: 'PUT', // Change method to PUT
           headers: {
             'Content-Type': 'application/json',

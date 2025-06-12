@@ -10,9 +10,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import { RewardContext } from './RewardContext';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
-
-// import * as ImagePicker from 'expo-image-picker';
-// import * as DocumentPicker from 'expo-document-picker';
+import { BASE_URL } from '../apiConfig'; // Adjust the import path as necessary
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,7 +30,7 @@ const MessageScreen = ({ route, navigation }) => {
   const fetchChatMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token'); // Retrieve token
-      const response = await fetch(`http://172.30.4.184:8080/api/messages/chat/${senderId}/${receiverId}`, {
+      const response = await fetch(`${BASE_URL}/api/messages/chat/${senderId}/${receiverId}`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`, // Add token to headers
@@ -70,7 +68,7 @@ const MessageScreen = ({ route, navigation }) => {
 
       try {
         const token = await AsyncStorage.getItem('token'); // Retrieve token
-        await fetch('http://172.30.4.184:8080/api/messages/send', {
+        await fetch(`${BASE_URL}/api/messages/send`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -78,7 +76,6 @@ const MessageScreen = ({ route, navigation }) => {
           },
           body: JSON.stringify(newMessage),
         });
-
         
       } catch (error) {
         console.error('Error sending message:', error);
